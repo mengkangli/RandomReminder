@@ -1,8 +1,11 @@
+# reminder.py
+
 import tkinter as tk
 from tkinter import messagebox
 import random
 import threading
 import time
+from src.log_manager import LogManager
 
 class ReminderApp:
     def __init__(self, root):
@@ -25,6 +28,8 @@ class ReminderApp:
 
         # 绑定窗口关闭事件
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+        self.log_manager = LogManager()  # 初始化日志系统
 
     def create_main_page(self):
         frame = self.main_frame
@@ -119,6 +124,7 @@ class ReminderApp:
                 next_rest_time = current_time + duration + t3_seconds  # 更新下一次休息时间
                 # 休息期间可能跳过了若干次闭眼提醒，更新闭眼提醒时间
                 next_eye_time = current_time + duration + random.uniform(t1_seconds, t2_seconds)
+                self.log_manager.log_reminder("休息", next_rest_time, duration)
                 continue
 
             # 处理闭眼提醒
@@ -126,6 +132,7 @@ class ReminderApp:
                 duration = self.show_countdown_popup("闭眼提醒", "请闭眼", 10)
                 print(f"用户闭眼了 {duration} 秒")
                 next_eye_time = current_time + duration + random.uniform(t1_seconds, t2_seconds)
+                self.log_manager.log_reminder("闭眼", next_eye_time, duration)
                 continue
 
             # 如果两者都没有触发，检查哪个更近，适当调整等待时间，减少CPU占用
@@ -134,6 +141,8 @@ class ReminderApp:
                 time.sleep(min(wait_time, 0.5))  # 最多等待0.5秒
             else:
                 time.sleep(0.1)
+
+            
 
     def show_countdown_popup(self, title, message, total_seconds):
         popup = tk.Toplevel(self.root)
@@ -174,6 +183,7 @@ class ReminderApp:
 
     def on_closing(self):
         self.running = False
+        self.log_manager.generate_report()  # 生成报告
         self.root.destroy()
 
 

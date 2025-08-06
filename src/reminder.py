@@ -1,4 +1,4 @@
-# reminder.py
+# ./src/reminder.py
 
 import tkinter as tk
 from tkinter import messagebox

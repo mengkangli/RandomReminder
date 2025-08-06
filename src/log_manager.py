@@ -1,4 +1,4 @@
-# log_manager.py
+# ./src/log_manager.py
 
 import os
 import time

@@ -1,11 +1,13 @@
 # ./src/reminder.py
 
 import tkinter as tk
-from tkinter import messagebox
 import random
 import threading
 import time
 from src.log_manager import LogManager
+from tkinter import messagebox
+from tkinter import *
+from playsound import playsound
 
 class ReminderApp:
     def __init__(self, root):
@@ -144,20 +146,33 @@ class ReminderApp:
 
             
 
-    def show_countdown_popup(self, title, message, total_seconds):
-        popup = tk.Toplevel(self.root)
+
+
+    def show_countdown_popup(self, title, message, total_seconds, play_sound=True):
+        popup = Toplevel(self.root)
         popup.title(title)
         popup.geometry("350x150")
         popup.configure(bg="#fffacd")
-
         popup.grab_set()
 
         self.countdown_active = True
-        self.actual_duration = 0
         start_time = time.time()
 
-        label = tk.Label(popup, text="", font=("Arial", 16), bg="#fffacd")
+        label = Label(popup, text="", font=("Arial", 16), bg="#fffacd")
         label.pack(expand=True)
+
+        def play_sound_effect(sound_file, enabled=True):
+            if enabled and sound_file:
+                try:
+                    playsound(sound_file)
+                except Exception as e:
+                    print("音效播放失败:", e)
+
+        threading.Thread(
+            target=play_sound_effect,
+            args=("sounds/eye.wav", play_sound),
+            daemon=True
+        ).start()
 
         def update_label(seconds_left):
             if self.countdown_active and seconds_left >= 0 and self.running:
@@ -171,7 +186,7 @@ class ReminderApp:
             self.countdown_active = False
             popup.destroy()
 
-        skip_button = tk.Button(popup, text="提前结束", command=skip_countdown, bg="#ff7f0e", fg="white")
+        skip_button = Button(popup, text="提前结束", command=skip_countdown, bg="#ff7f0e", fg="white")
         skip_button.pack(pady=5)
 
         update_label(total_seconds)

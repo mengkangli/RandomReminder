@@ -1,12 +1,11 @@
-# ./src/reminder.py
-
 import tkinter as tk
 import random
 import threading
 import time
+import pystray
+from PIL import Image, ImageDraw
 from src.log_manager import LogManager
-from tkinter import messagebox
-from tkinter import *
+from tkinter import messagebox, Toplevel, Label, Button
 from playsound import playsound
 
 class ReminderApp:
@@ -32,6 +31,50 @@ class ReminderApp:
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         self.log_manager = LogManager()  # 初始化日志系统
+
+        # 初始化托盘图标
+        self.icon = None
+        self.create_tray_icon()
+
+    def create_tray_icon(self):
+        # 创建托盘图标
+        image = Image.new('RGB', (64, 64), color=(255, 255, 255))
+        draw = ImageDraw.Draw(image)
+        draw.rectangle((10, 10, 54, 54), fill=(0, 128, 255))
+        icon = pystray.Icon("ReminderApp", image, "定时提醒软件", self.create_menu())
+        self.icon = icon
+
+    def create_menu(self):
+        # 创建托盘菜单
+        return (
+            pystray.MenuItem('显示', self.restore_window),
+            pystray.MenuItem('退出', self.exit_app)
+        )
+
+    def show_tray_icon(self):
+        if self.icon:
+            self.icon.run()
+
+    def hide_window(self):
+        self.root.withdraw()  # 隐藏主窗口
+
+    def restore_window(self, icon, item):
+        self.root.deiconify()  # 显示主窗口
+
+    def exit_app(self, icon, item):
+        self.running = False
+        self.icon.stop()
+        self.root.destroy()
+
+    def on_closing(self):
+        # 弹出选项框，询问用户是退出还是最小化到托盘
+        answer = messagebox.askquestion("关闭提醒", "是否最小化到托盘？\n点击 '是' 最小化，'否' 退出程序")
+        if answer == 'yes':
+            self.hide_window()
+            threading.Thread(target=self.show_tray_icon, daemon=True).start()
+        else:
+            self.exit_app(None, None)
+
 
     def create_main_page(self):
         frame = self.main_frame
@@ -144,10 +187,6 @@ class ReminderApp:
             else:
                 time.sleep(0.1)
 
-            
-
-
-
     def show_countdown_popup(self, title, message, total_seconds, play_sound=True):
         popup = Toplevel(self.root)
         popup.title(title)
@@ -196,13 +235,6 @@ class ReminderApp:
         self.actual_duration = int(time.time() - start_time)
         return self.actual_duration
 
-    def on_closing(self):
-        self.running = False
-        self.log_manager.generate_report()  # 生成报告
-        self.root.destroy()
-
-
-# 启动程序
 if __name__ == "__main__":
     root = tk.Tk()
     app = ReminderApp(root)
